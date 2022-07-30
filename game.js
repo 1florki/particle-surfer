@@ -220,8 +220,8 @@ function setupScene() {
   //scene.fog = new THREE.Fog(fogColor, 4.5, 4.7);
 
   size = new THREE.Vector3(10, 3, 10);
-  let aspect = window.innerWidth / window.innerHeight
-  camera = new THREE.OrthographicCamera(-viewSize, viewSize, viewSize / aspect, -viewSize / aspect, 1, 100);
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 100);
+  updateCamera()
   //camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 40);
   camera.position.z = 9
 
@@ -242,7 +242,7 @@ function setupScene() {
   scene.add(part2.mesh);
   switchActive();
 // new THREE.SphereGeometry(0.15, 8, 8)
-  player = new THREE.Mesh(new THREE.RingGeometry( 0.17, 0.2, 8 ), new THREE.MeshBasicMaterial({
+  player = new THREE.Mesh(new THREE.RingGeometry( 0.15, 0.2, 8 ), new THREE.MeshBasicMaterial({
     color: 0xffffff,
   }))
   playerPart = new Particle();
@@ -329,14 +329,27 @@ function animate(now) {
   renderer.render(scene, camera);
 }
 
-function onResize() {
-  //camera.aspect = window.innerWidth / window.innerHeight;
-  let aspect = window.innerWidth / window.innerHeight
-  camera.top = viewSize / aspect
-  camera.bottom = -viewSize / aspect
+function updateCamera() {
+  let aspect = window.innerWidth / window.innerHeight;
+  camera.top = viewSize;
+  camera.bottom = -viewSize;
+  camera.right = viewSize;
+  camera.left = -viewSize;
+  if(aspect > 1) {
+    camera.top = viewSize / aspect
+    camera.bottom = -viewSize / aspect
+    camera.rotation.z = 0
+  } else {
+    camera.right = viewSize * aspect
+    camera.left = -viewSize * aspect
+    camera.rotation.z = Math.PI / 2
+  }
   camera.updateProjectionMatrix();
+}
 
+function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
+  updateCamera()
 }
 
 function toggleFullScreen() {
