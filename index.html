@@ -1,0 +1,49 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<script type="x-shader/x-vertex" id="vertexshader">
+
+			attribute float scale;
+			attribute float alpha;
+
+			attribute vec3 color;
+
+			varying vec3 vColor;
+			varying float vAlpha;
+            
+			void main() {
+
+				vColor = color;
+                vAlpha = alpha;
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+
+				gl_PointSize = scale * ( 300.0 / - mvPosition.z );
+
+				gl_Position = projectionMatrix * mvPosition;
+
+			}
+
+		</script>
+  
+  <script type="x-shader/x-fragment" id="fragmentshader">
+
+			uniform vec3 color;
+
+			varying vec3 vColor;
+			varying float vAlpha;
+
+			void main() {
+
+				if ( length( gl_PointCoord - vec2( 0.5, 0.5 ) ) > 0.475 ) discard;
+
+				gl_FragColor = vec4(color * vColor, vAlpha);
+
+			}
+
+		</script>
+<body scroll="no" style="overflow: hidden; background-color: rgb(0,0,0); touch-action: none;">
+<script src="game.js" type="module"></script>
+  
+</body>
+</html>
