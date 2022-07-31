@@ -51,14 +51,10 @@ class Particles {
   constructor(opt) {
     opt = opt || {};
 
-    this.num = opt.num || 10000;
-
-    this.particleSize = 2;
+    this.num = opt.num || 7000;
     this.size = opt.size || new THREE.Vector3(1, 1, 1);
-
-
+    
     this.vertexColors = opt.vertexColors || true;
-    this.color = opt.color || new THREE.Color(0xffffff);
     this.maxSpeed = opt.maxSpeed || 0.029;
 
     this.minTime = opt.minTime || 0.01;
@@ -82,8 +78,8 @@ class Particles {
     })
   }
   applyNoiseForce(p, dt) {
-    p.acc.x = (this.noise.getValue(p.pos.x, p.pos.y + 23) + 0.002)// * dt * 30;
-    p.acc.y = this.noise.getValue(p.pos.x + 100, p.pos.y)// * dt * 30;
+    p.acc.x = (this.noise.getValue(p.pos.x, p.pos.y + 23) + 0.002);
+    p.acc.y = this.noise.getValue(p.pos.x + 100, p.pos.y);
   }
 
   createParticles() {
@@ -114,11 +110,6 @@ class Particles {
 
     const material = new THREE.ShaderMaterial({
       transparent: true,
-      uniforms: {
-        color: {
-          value: new THREE.Color(0xffffff)
-        },
-      },
       vertexShader: document.getElementById('vertexshader').textContent,
       fragmentShader: document.getElementById('fragmentshader').textContent
 
@@ -180,17 +171,17 @@ let darkMode = true;
 let goal, borders = [];
 
 const darkModeSettings = {
-  background: new THREE.Color(0x000000),
-  border: new THREE.Color(0x444444),
-  goal: new THREE.Color(0xffffff),
-  player: new THREE.Color(0xffffff),
+  background: new THREE.Color(0x000000).convertSRGBToLinear(),
+  border: new THREE.Color(0x999999).convertSRGBToLinear(),
+  goal: new THREE.Color(0xffffff).convertSRGBToLinear(),
+  player: new THREE.Color(0xffffff).convertSRGBToLinear(),
 }
 
 const lightModeSettings = {
-  background: new THREE.Color(0xffffff),
-  border: new THREE.Color(0x999999),
-  goal: new THREE.Color(0x000000),
-  player: new THREE.Color(0x000000),
+  background: new THREE.Color(0xffffff).convertSRGBToLinear(),
+  border: new THREE.Color(0xbbbbbb).convertSRGBToLinear(),
+  goal: new THREE.Color(0x000000).convertSRGBToLinear(),
+  player: new THREE.Color(0x000000).convertSRGBToLinear(),
 }
 
 function setupScene() {
@@ -199,12 +190,15 @@ function setupScene() {
 
 
   renderer = new THREE.WebGLRenderer({
-    antialising: true
+    antialising: false, depth: false, powerPreference: "high-performance"
   });
+  
+  renderer.autoClear = true
 
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
-
+renderer.gammaFactor = 2.2;
+renderer.outputEncoding = THREE.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
 
   window.addEventListener('resize', onResize, false);
@@ -248,9 +242,8 @@ function setupScene() {
   //scene.fog = new THREE.Fog(fogColor, 4.5, 4.7);
 
   size = new THREE.Vector3(10, 4, 10);
-  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 100);
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 20);
   updateCamera()
-  //camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 40);
   camera.position.z = 9
 
   clock = new THREE.Clock();
@@ -274,7 +267,7 @@ function setupScene() {
     color: 0xffffff,
   }))
   playerPart = new Particle();
-  playerPart.pos.set(-size.x * 5 / 6, 0, 0.1);
+  playerPart.pos.set(-size.x * 5 / 6, 0, 0);
   playerPart.time = 1000000;
   scene.add(player);
 
@@ -373,9 +366,14 @@ function animate(now) {
   // animation loop here
 
   let dt = clock.getDelta();
+  
+  //console.log(dt * 30)
   //console.log(dt);
   for (let i = 0; i < particles.length; i++) {
-    particles[i].update(dt, i);
+    if(particles[i].shouldUpdate != false) particles[i].update(dt, i);
+    
+    if(particles[i].alphaMult <= 0) particles[i].shouldUpdate = false
+    else particles[i].shouldUpdate = true
   }
   if (!stop) {
 
