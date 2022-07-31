@@ -51,14 +51,11 @@ class Particles {
   constructor(opt) {
     opt = opt || {};
 
-    this.num = opt.num || 7000;
+    this.num = opt.num || 6000;
     this.size = opt.size || new THREE.Vector3(1, 1, 1);
-    
-    this.vertexColors = opt.vertexColors || true;
-    this.maxSpeed = opt.maxSpeed || 0.029;
 
-    this.minTime = opt.minTime || 0.01;
-    this.maxTime = opt.maxTime || 1;
+    this.maxSpeed = opt.maxSpeed || 0.033;
+
     this.newNoise(opt.seed || 0);
 
     this.alphaMult = 1
@@ -86,6 +83,8 @@ class Particles {
     this.parts = [];
     this.scales = new Float32Array(this.num);
     this.alpha = new Float32Array(this.num);
+    this.colorData = new Float32Array(this.num * 3);
+    this.positionData = new Float32Array(this.num * 3);
 
 
     for (let i = 0; i < this.num; i++) {
@@ -97,14 +96,8 @@ class Particles {
     }
 
     this.geo = new THREE.BufferGeometry();
-    this.positionData = new Float32Array(this.num * 3);
     this.geo.setAttribute('position', new THREE.BufferAttribute(this.positionData, 3));
-
-    if (this.vertexColors) {
-      this.colorData = new Float32Array(this.num * 3);
-      this.geo.setAttribute('color', new THREE.BufferAttribute(this.colorData, 3));
-    }
-
+    this.geo.setAttribute('color', new THREE.BufferAttribute(this.colorData, 3));
     this.geo.setAttribute('scale', new THREE.BufferAttribute(this.scales, 1));
     this.geo.setAttribute('alpha', new THREE.BufferAttribute(this.alpha, 1));
 
@@ -112,7 +105,6 @@ class Particles {
       transparent: true,
       vertexShader: document.getElementById('vertexshader').textContent,
       fragmentShader: document.getElementById('fragmentshader').textContent
-
     });
 
     this.mesh = new THREE.Points(this.geo, material);
@@ -142,8 +134,9 @@ class Particles {
 
       this.alpha[i] = Math.min((p.maxTime - p.time) * 2, 1) * this.alphaMult
 
-
-      if (p.isDead(this.size) || this.scales[i] < 0.05) p.reset(this.size)
+      if (p.isDead(this.size) || this.scales[i] < 0.05) {
+        p.reset(this.size);
+      }
     }
     this.geo.attributes.position.needsUpdate = true;
     this.geo.attributes.color.needsUpdate = true;
@@ -190,15 +183,16 @@ function setupScene() {
 
 
   renderer = new THREE.WebGLRenderer({
-    antialising: false, depth: false, powerPreference: "high-performance"
+    antialising: false,
+    depth: false
   });
-  
+
   renderer.autoClear = true
 
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
-renderer.gammaFactor = 2.2;
-renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.gammaFactor = 2.2;
+  renderer.outputEncoding = THREE.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
 
   window.addEventListener('resize', onResize, false);
@@ -241,7 +235,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
   scene.background = darkModeSettings.background;
   //scene.fog = new THREE.Fog(fogColor, 4.5, 4.7);
 
-  size = new THREE.Vector3(10, 4, 10);
+  size = new THREE.Vector3(10, 3.5, 10);
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 20);
   updateCamera()
   camera.position.z = 9
@@ -298,7 +292,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
   }));
   goal.position.x = size.x;
   scene.add(goal)
-  
+
   let params = new URLSearchParams(location.search);
   let theme = params.get('theme')
   darkMode = theme != "light"
@@ -314,8 +308,8 @@ function updateTheme() {
     }
 
     player.material.color = darkModeSettings.player
-    
-    for(let p of particles) {
+
+    for (let p of particles) {
       p.dark = true
     }
   } else {
@@ -326,7 +320,7 @@ function updateTheme() {
     }
 
     player.material.color = lightModeSettings.player
-    for(let p of particles) {
+    for (let p of particles) {
       p.dark = false
     }
   }
@@ -366,13 +360,13 @@ function animate(now) {
   // animation loop here
 
   let dt = clock.getDelta();
-  
+
   //console.log(dt * 30)
   //console.log(dt);
   for (let i = 0; i < particles.length; i++) {
-    if(particles[i].shouldUpdate != false) particles[i].update(dt, i);
-    
-    if(particles[i].alphaMult <= 0) particles[i].shouldUpdate = false
+    if (particles[i].shouldUpdate != false) particles[i].update(dt, i);
+
+    if (particles[i].alphaMult <= 0) particles[i].shouldUpdate = false
     else particles[i].shouldUpdate = true
   }
   if (!stop) {
