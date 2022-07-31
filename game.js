@@ -130,7 +130,7 @@ class Particles {
         this.colorData[i * 3 + 2] = num * (p.acc.y + 0.01) * 50 + 0.2;
       }
 
-      this.scales[i] = p.time / p.maxTime * 0.07 * p.size
+      this.scales[i] = p.time / p.maxTime * 0.035 * p.size
 
       this.alpha[i] = Math.min((p.maxTime - p.time) * 2, 1) * this.alphaMult
 
@@ -190,7 +190,7 @@ function setupScene() {
   renderer.autoClear = true
 
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
+  //renderer.setPixelRatio(window.devicePixelRatio);
   renderer.gammaFactor = 2.2;
   renderer.outputEncoding = THREE.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
@@ -253,6 +253,9 @@ function setupScene() {
 
   particles.push(part1);
   particles.push(part2);
+  
+  part1.mesh.matrixAutoUpdate = false
+  part2.mesh.matrixAutoUpdate = false
   scene.add(part1.mesh);
   scene.add(part2.mesh);
   switchActive();
@@ -273,12 +276,15 @@ function setupScene() {
   border.position.y = size.y;
   scene.add(border);
   borders.push(border)
-
+  border.updateMatrix()
+  border.matrixAutoUpdate = false
 
   let border2 = border.clone();
   border2.position.y = -size.y;
   scene.add(border2)
   borders.push(border2)
+  border2.updateMatrix()
+  border2.matrixAutoUpdate = false
 
   let border3 = new THREE.Mesh(new THREE.BoxGeometry(0.1, size.y * 2 + 0.1, 0.15), new THREE.MeshBasicMaterial({
     color: darkModeSettings.border
@@ -286,12 +292,16 @@ function setupScene() {
   border3.position.x = -size.x;
   scene.add(border3)
   borders.push(border3)
+  border3.updateMatrix()
+  border3.matrixAutoUpdate = false
 
   goal = new THREE.Mesh(new THREE.BoxGeometry(0.1, size.y * 2 + 0.1, 0.15), new THREE.MeshBasicMaterial({
     color: darkModeSettings.goal
   }));
   goal.position.x = size.x;
   scene.add(goal)
+  goal.updateMatrix()
+  goal.matrixAutoUpdate = false
 
   let params = new URLSearchParams(location.search);
   let theme = params.get('theme')
