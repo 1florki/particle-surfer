@@ -3,10 +3,11 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/110/thre
 import {
   Noise
 } from 'https://1florki.github.io/jsutils2/noise.js'
+/*
 import {
   Gradient
 } from 'https://1florki.github.io/threejsutils/gradient.js'
-
+*/
 
 class Particle {
   constructor(opt) {
@@ -18,17 +19,19 @@ class Particle {
     this.time = opt.time || Math.random() * 2;
     this.maxTime = this.time
 
-    this.size = Math.max(Math.pow(Math.random(), 3) * 6, 1)
+    this.size = Math.max(Math.pow(Math.random(), 2) * 7, 3)
     if (opt.size) this.reset(opt.size);
   }
+
   reset(size) {
-    //if(Math.random() < 0.01) console.log(this.speed.length());
     this.setPos((Math.random() - 0.5) * 2 * size.x, (Math.random() - 0.5) * 2 * size.y, 0);
     this.acc.set(0, 0, 0);
     this.speed.set(0, 0, 0);
     this.time = Math.random() * 3.8 + 0.7
     this.maxTime = this.time
   }
+
+
   setPos(x, y, z) {
     this.pos.set(x, y, z);
   }
@@ -56,14 +59,16 @@ class Particles {
 
     this.vertexColors = opt.vertexColors || true;
     this.color = opt.color || new THREE.Color(0xffffff);
-    this.maxSpeed = opt.maxSpeed || 0.025;
+    this.maxSpeed = opt.maxSpeed || 0.029;
 
     this.minTime = opt.minTime || 0.01;
     this.maxTime = opt.maxTime || 1;
     this.newNoise(opt.seed || 0);
 
     this.alphaMult = 1
-    
+
+    this.dark = true
+
     this.createParticles();
   }
   newNoise(seed) {
@@ -76,9 +81,9 @@ class Particles {
       seed: seed
     })
   }
-  applyNoiseForce(p) {
-    p.acc.x = this.noise.getValue(p.pos.x, p.pos.y + 23) + 0.002;
-    p.acc.y = this.noise.getValue(p.pos.x + 100, p.pos.y);
+  applyNoiseForce(p, dt) {
+    p.acc.x = (this.noise.getValue(p.pos.x, p.pos.y + 23) + 0.002)// * dt * 30;
+    p.acc.y = this.noise.getValue(p.pos.x + 100, p.pos.y)// * dt * 30;
   }
 
   createParticles() {
@@ -125,21 +130,29 @@ class Particles {
     for (let i = 0; i < this.num; i++) {
       let p = this.parts[i];
 
-      this.applyNoiseForce(p);
+      this.applyNoiseForce(p, dt);
       p.update(dt, this.maxSpeed);
-      if (p.isDead(this.size)) p.reset(this.size)
 
       this.positionData[i * 3] = p.pos.x;
       this.positionData[i * 3 + 1] = p.pos.y;
       this.positionData[i * 3 + 2] = p.pos.z;
 
-      this.colorData[i * 3] = num * ((p.acc.x + 0.01) * 80 + 0.2);
-      this.colorData[i * 3 + 1] = (1 - num) * ((p.acc.x + 0.01) * 80 + 0.2);
-      this.colorData[i * 3 + 2] = (p.acc.y + 0.01) * 50 + 0.2;
+      if (this.dark) {
+        this.colorData[i * 3] = num * ((p.acc.x + 0.01) * 80 + 0.2);
+        this.colorData[i * 3 + 1] = (1 - num) * ((p.acc.x + 0.01) * 80 + 0.2);
+        this.colorData[i * 3 + 2] = (p.acc.y + 0.01) * 50 + 0.2;
+      } else {
+        this.colorData[i * 3] = num * (0.5 - (p.acc.x + 0.01) * 80 + 0.2) + (1 - num) * (p.acc.x + 0.01) * 80;
+        this.colorData[i * 3 + 1] = (p.acc.y + p.acc.x) * 80;
+        this.colorData[i * 3 + 2] = num * (p.acc.y + 0.01) * 50 + 0.2;
+      }
 
-      this.scales[i] = p.time / p.maxTime * 0.05 * p.size
+      this.scales[i] = p.time / p.maxTime * 0.07 * p.size
 
       this.alpha[i] = Math.min((p.maxTime - p.time) * 2, 1) * this.alphaMult
+
+
+      if (p.isDead(this.size) || this.scales[i] < 0.05) p.reset(this.size)
     }
     this.geo.attributes.position.needsUpdate = true;
     this.geo.attributes.color.needsUpdate = true;
@@ -153,15 +166,38 @@ class Particles {
 var renderer, scene, light, camera, keys = {},
   mesh, camNode, clock, particles = [],
   player, playerPart, active = 0,
-  size, stop = false;
+  size, stop = false,
+  stats;
 
-const levels = [[89842, 74789], [41742, 37680], [78288, 60840], [15693, 83395], [54971, 5891], [29338, 42504], [83166, 59559], [14271, 26324], [87125, 3695], [43298, 94833], [12641, 84336], [81706, 92840], [81342, 18215], [68226, 9387], [50415, 61135], [40356, 68917], [21870, 34087], [77604, 4641], [35813, 32668]];
+const levels = [[78288, 60840], [15693, 83395], [54971, 5891], [29338, 42504], [83166, 59559], [14271, 26324], [87125, 3695], [43298, 94833], [12641, 84336], [81706, 92840], [81342, 18215], [68226, 9387], [50415, 61135], [40356, 68917], [21870, 34087], [77604, 4641], [35813, 32668]];
 
 let level = 0;
 
 let viewSize = 10.5
 
+let darkMode = true;
+
+let goal, borders = [];
+
+const darkModeSettings = {
+  background: new THREE.Color(0x000000),
+  border: new THREE.Color(0x444444),
+  goal: new THREE.Color(0xffffff),
+  player: new THREE.Color(0xffffff),
+}
+
+const lightModeSettings = {
+  background: new THREE.Color(0xffffff),
+  border: new THREE.Color(0x999999),
+  goal: new THREE.Color(0x000000),
+  player: new THREE.Color(0x000000),
+}
+
 function setupScene() {
+  stats = new Stats();
+  document.body.appendChild(stats.dom);
+
+
   renderer = new THREE.WebGLRenderer({
     antialising: true
   });
@@ -173,29 +209,22 @@ function setupScene() {
 
   window.addEventListener('resize', onResize, false);
 
-  scene = new THREE.Scene({
-    background: new THREE.Color(0xff0000)
-  });
-
-  let ambi = new THREE.AmbientLight(0xffffff, 0.5); // soft white light
-  scene.add(ambi);
-
-  let light = new THREE.DirectionalLight(0xffffff, 0.5);
-  scene.add(light);
-  let light2 = new THREE.DirectionalLight(0xffffff, 0.5);
-  light2.position.set(0, -1, 0.5)
-  scene.add(light2);
+  scene = new THREE.Scene();
 
   document.addEventListener("keydown", (event) => {
     keys[event.key] = true
     if (event.key == " ") {
       switchActive();
     }
-    if (event.key == "t") {
+    if (event.key == "s") {
       stop = !stop;
     }
     if (event.key == "l") {
       nextLevel();
+    }
+    if (event.key == "t") {
+      darkMode = !darkMode
+      updateTheme();
     }
     if (event.key == "f") {
       toggleFullScreen();
@@ -215,11 +244,10 @@ function setupScene() {
     switchActive();
   });
 
-  let fogColor = new THREE.Color(0x000000);
-  scene.background = fogColor;
+  scene.background = darkModeSettings.background;
   //scene.fog = new THREE.Fog(fogColor, 4.5, 4.7);
 
-  size = new THREE.Vector3(10, 3, 10);
+  size = new THREE.Vector3(10, 4, 10);
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 100);
   updateCamera()
   //camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 40);
@@ -241,8 +269,8 @@ function setupScene() {
   scene.add(part1.mesh);
   scene.add(part2.mesh);
   switchActive();
-// new THREE.SphereGeometry(0.15, 8, 8)
-  player = new THREE.Mesh(new THREE.RingGeometry( 0.15, 0.2, 8 ), new THREE.MeshBasicMaterial({
+  // new THREE.SphereGeometry(0.15, 8, 8)
+  player = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.23, 16), new THREE.MeshBasicMaterial({
     color: 0xffffff,
   }))
   playerPart = new Particle();
@@ -252,26 +280,63 @@ function setupScene() {
 
   let borderColor = 0x444444 //0xcf1020
   let goalColor = 0xffffff //0xcf1020
-  let border = new THREE.Mesh(new THREE.BoxGeometry(size.x * 2, 0.1, 0.15), new THREE.MeshStandardMaterial({
-    color: borderColor
+  let border = new THREE.Mesh(new THREE.BoxGeometry(size.x * 2, 0.1, 0.15), new THREE.MeshBasicMaterial({
+    color: darkModeSettings.border
   }));
   border.position.y = size.y;
   scene.add(border);
+  borders.push(border)
+
+
   let border2 = border.clone();
   border2.position.y = -size.y;
   scene.add(border2)
+  borders.push(border2)
 
-  let border3 = new THREE.Mesh(new THREE.BoxGeometry(0.1, size.y * 2 + 0.1, 0.15), new THREE.MeshStandardMaterial({
-    color: borderColor
+  let border3 = new THREE.Mesh(new THREE.BoxGeometry(0.1, size.y * 2 + 0.1, 0.15), new THREE.MeshBasicMaterial({
+    color: darkModeSettings.border
   }));
   border3.position.x = -size.x;
   scene.add(border3)
+  borders.push(border3)
 
-  let goal = new THREE.Mesh(new THREE.BoxGeometry(0.1, size.y * 2 + 0.1, 0.15), new THREE.MeshStandardMaterial({
-    color: goalColor
+  goal = new THREE.Mesh(new THREE.BoxGeometry(0.1, size.y * 2 + 0.1, 0.15), new THREE.MeshBasicMaterial({
+    color: darkModeSettings.goal
   }));
   goal.position.x = size.x;
   scene.add(goal)
+  
+  let params = new URLSearchParams(location.search);
+  let theme = params.get('theme')
+  darkMode = theme != "light"
+  updateTheme();
+}
+
+function updateTheme() {
+  if (darkMode) {
+    scene.background = darkModeSettings.background
+    goal.material.color = darkModeSettings.goal
+    for (let b of borders) {
+      b.material.color = darkModeSettings.border
+    }
+
+    player.material.color = darkModeSettings.player
+    
+    for(let p of particles) {
+      p.dark = true
+    }
+  } else {
+    scene.background = lightModeSettings.background
+    goal.material.color = lightModeSettings.goal
+    for (let b of borders) {
+      b.material.color = lightModeSettings.border
+    }
+
+    player.material.color = lightModeSettings.player
+    for(let p of particles) {
+      p.dark = false
+    }
+  }
 }
 
 function nextLevel() {
@@ -291,7 +356,7 @@ function switchActive() {
     particles[i].alphaMult = 0.0;
     //particles[i].mesh.position.z = -0.1;
   }
-    particles[active].alphaMult = 1;
+  particles[active].alphaMult = 1;
   //particles[active].mesh.material.size = 1.7;
   particles[active].mesh.position.z = 0;
 }
@@ -316,17 +381,18 @@ function animate(now) {
 
     particles[active].applyNoiseForce(playerPart);
     playerPart.update(dt, particles[active].maxSpeed);
-     player.position.copy(playerPart.pos);
-     if(playerPart.isDead(size)) {
-       if(playerPart.pos.x >= size.x) {
-         nextLevel();
-       }
-       resetPlayer();
-     }
+    player.position.copy(playerPart.pos);
+    if (playerPart.isDead(size)) {
+      if (playerPart.pos.x >= size.x) {
+        nextLevel();
+      }
+      resetPlayer();
+    }
     //camera.position.x = (playerPart.pos.x + camera.position.x * 49) / 50;
   }
   //console.log(playerPart.pos);
   renderer.render(scene, camera);
+  stats.update();
 }
 
 function updateCamera() {
@@ -335,14 +401,14 @@ function updateCamera() {
   camera.bottom = -viewSize;
   camera.right = viewSize;
   camera.left = -viewSize;
-  if(aspect > 1) {
+  if (aspect > 1) {
     camera.top = viewSize / aspect
     camera.bottom = -viewSize / aspect
     camera.rotation.z = 0
   } else {
     camera.right = viewSize * aspect
     camera.left = -viewSize * aspect
-    camera.rotation.z = Math.PI / 2
+    camera.rotation.z = -Math.PI / 2
   }
   camera.updateProjectionMatrix();
 }
