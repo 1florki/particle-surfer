@@ -130,7 +130,7 @@ class Particles {
         this.colorData[i * 3 + 2] = num * (p.acc.y + 0.01) * 50 + 0.2;
       }
 
-      this.scales[i] = p.time / p.maxTime * 0.035 * p.size
+      this.scales[i] = p.time / p.maxTime * 0.025 * p.size
 
       this.alpha[i] = Math.min((p.maxTime - p.time) * 2, 1) * this.alphaMult
 
@@ -153,7 +153,7 @@ var renderer, scene, light, camera, keys = {},
   size, stop = false,
   stats;
 
-const levels = [[78288, 60840], [15693, 83395], [54971, 5891], [29338, 42504], [83166, 59559], [14271, 26324], [87125, 3695], [43298, 94833], [12641, 84336], [81706, 92840], [81342, 18215], [68226, 9387], [50415, 61135], [40356, 68917], [21870, 34087], [77604, 4641], [35813, 32668]];
+const levels = [[15693, 83395], [54971, 5891], [29338, 42504], [87125, 3695], [12641, 84336], [81706, 92840], [81342, 18215], [68226, 9387], [50415, 61135], [40356, 68917], [21870, 34087], [77604, 4641], [35813, 32668], [78288, 60840], [83166, 59559], [14271, 26324], [43298, 94833], ];
 
 let level = 0;
 
@@ -410,7 +410,7 @@ function updateCamera() {
   } else {
     camera.right = viewSize * aspect
     camera.left = -viewSize * aspect
-    camera.rotation.z = -Math.PI / 2
+    camera.rotation.z = Math.PI / 2
   }
   camera.updateProjectionMatrix();
 }
