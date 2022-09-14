@@ -307,9 +307,9 @@ function setupEvents() {
     }
   }, false);
 
-  renderer.domElement.addEventListener("mouseup", (event) => {
+  /*renderer.domElement.addEventListener("mouseup", (event) => {
     switchActive();
-  });
+  });*/
 
   document.addEventListener("touchend", (event) => {
     switchActive();
