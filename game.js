@@ -177,7 +177,7 @@ let levelIndex = 0;
 
 let currentLevel = 0;
 
-const mainLevels = [100];
+const mainLevels = [100, 101, 102, 103, 104];
 let ownLevels;
 let loadedLevels;
 
@@ -200,8 +200,8 @@ const darkModeSettings = {
 }
 
 const lightModeSettings = {
-  background: new THREE.Color(0xffffff).convertSRGBToLinear(),
-  border: new THREE.Color(0xbbbbbb).convertSRGBToLinear(),
+  background: new THREE.Color(0xdddddd).convertSRGBToLinear(),
+  border: new THREE.Color(0x999999).convertSRGBToLinear(),
   goal: new THREE.Color(0x000000).convertSRGBToLinear(),
   player: new THREE.Color(0x000000).convertSRGBToLinear(),
 }
@@ -295,7 +295,6 @@ function setupEvents() {
     }
     if (event.key == "f") {
       toggleFullScreen();
-      console.log("hi")
     }
     if (event.key == "r") {
       let s1 = Math.floor(Math.random() * 100000);
@@ -331,20 +330,42 @@ function setupEvents() {
   let button2 = document.getElementById("button2");
 
   button2.onclick = () => {
-    levelType = 1
-    nextLevel()
-    resumeGame();
-  }
-
-  let button3 = document.getElementById("button3");
-
-  button3.onclick = () => {
-    levelIndex = 0
-    levelType = 2
     nextLevel();
     resumeGame();
   }
 
+    
+  let button3 = document.getElementById("button3");
+
+  button3.onclick = () => {
+    levelType += 1
+    if(levelType > 3) levelType = 0;
+    levelIndex = 0
+    nextLevel();
+    
+    switch (levelType) {
+      case 0:
+        button3.innerHTML = "levels"
+        break;
+      case 1:
+        button3.innerHTML = "found"
+        break;
+      case 2:
+        button3.innerHTML = "loaded"
+        break;
+      case 3:
+        button3.innerHTML = "random"
+        break;
+    }
+  }
+
+  let button4 = document.getElementById("button4");
+
+  button4.onclick = () => {
+        button4.innerHTML = darkMode ? "dark" : "light"
+      darkMode = !darkMode
+      updateTheme();
+  }
 }
 
 function setupGame() {
@@ -483,24 +504,29 @@ function nextLevel() {
     playLevel(currentLevel);
     levelIndex++;
   } else if (levelType == 1) {
-    currentLevel = Math.floor(Math.random() * 1000000);
-    playLevel(currentLevel);
-  } else if (levelType == 2) {
-    console.log(levelIndex)
-    if (levelIndex >= ownLevels.length) {
-      levelType = 1;
+    if (!ownLevels || levelIndex >= ownLevels.length) {
+      levelType = 2;
       nextLevel();
-      console.log("hi")
       return;
     }
     
     currentLevel = ownLevels[levelIndex];
     playLevel(currentLevel);
     levelIndex++;
-
+  } else if (levelType == 2) {
+    if (!loadedLevels || levelIndex >= loadedLevels.length) {
+      levelType = 3;
+      nextLevel();
+      return;
+    }
+    
+    currentLevel = loadedLevels[levelIndex];
+    playLevel(currentLevel);
+    levelIndex++;
   } else if (levelType == 3) {
-
-  }
+    currentLevel = Math.floor(Math.random() * 1000000);
+    playLevel(currentLevel);
+  } 
 }
 
 function switchActive() {
@@ -523,7 +549,7 @@ function resetPlayer() {
 }
 
 function saveLevel(x) {
-  if(levelType == 1) {
+  if(levelType == 3) {
     ownLevels.push(x);
     localStorage.setItem('ownLevels', ownLevels);
   }
