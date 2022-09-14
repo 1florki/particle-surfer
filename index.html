@@ -1,15 +1,21 @@
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="apple-touch-icon" href="/icon.png">
 
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200&display=swap" rel="stylesheet">
+
 
   <script src="https://mrdoob.github.io/stats.js/build/stats.min.js"></script>
-<script type="x-shader/x-vertex" id="vertexshader">
+  
+  <script type="x-shader/x-vertex" id="vertexshader">
 
-			attribute float scale;
+    attribute float scale;
 			attribute float alpha;
 
 			attribute vec3 color;
@@ -30,10 +36,9 @@
 			}
 
 		</script>
-  
   <script type="x-shader/x-fragment" id="fragmentshader">
 
-			varying vec3 vColor;
+    varying vec3 vColor;
 			varying float vAlpha;
 
 			void main() {
@@ -45,9 +50,77 @@
 			}
 
 		</script>
+
+  <style>
+
+    .center {
+      position: absolute;
+      left: 50%;
+      /* horizontal alignment */
+      top: 50%;
+      /* vertical alignment */
+      transform: translate(-50%, -50%);
+      text-align: center
+    }
+    
+    .button {
+      color: white;
+    }
+
+    .button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    #level {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      padding: 5px 10px;
+      font-family: "Montserrat", Arial, sans-serif;
+      color: white;
+    }
+    .pauseButton {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      padding: 5px 10px;
+      display: none;
+    }
+    .pauseButton:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    button {
+      font-family: "Montserrat", Arial, sans-serif;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 15px 32px;
+      display: inline-block;
+      font-size: 16px;
+      border-radius: 5px;
+      transition-duration: 0.6s;
+      border: 1px solid white;
+    }
+    body {
+      
+      overflow: hidden; background-color: rgb(0,0,0);
+    }
+  </style>
+
 </head>
-<body scroll="no" style="overflow: hidden; background-color: rgb(0,0,0);">
-<script src="game.js" type="module"></script>
-  
+
+<body scroll="no">
+  <script src="game.js" type="module"></script>
+  <div class="center" id="buttonDiv">
+    <button class="button" id="button1">play levels</button><br><br>
+    <button class="button" id="button2">play random</button><br><br>
+    <button class="button" id="button3">play found</button><br><br>
+    <button class="button" id="button4">play loaded</button>
+  </div>
+  <button class="pauseButton" id="pause">pause</button>
+  <div id="level">000000</div>
 </body>
+
 </html>
